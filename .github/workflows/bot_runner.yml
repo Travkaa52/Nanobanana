@@ -1,9 +1,9 @@
 name: Telegram Nano Banana Bot
 
 on:
-  workflow_dispatch: # Позволяет запустить бота вручную из вкладки Actions
+  workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Перезапуск каждые 6 часов
+    - cron: '0 */6 * * *'
 
 jobs:
   run-bot:
@@ -15,21 +15,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11' # Используем более свежий Python
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          # Обновляем pip и ставим современные библиотеки
           python -m pip install --upgrade pip
-          pip install aiogram google-genai 
+          # Нам нужны: aiogram (для ТГ), google-genai (для картинок), openai (для DeepSeek)
+          pip install aiogram google-genai openai
 
       - name: Run Telegram Bot
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        # Используем unbuffered вывод, чтобы логи в GitHub Actions обновлялись в реальном времени
-        run: python -u bot.py 
-        
-        # GitHub Actions принудительно убивает задачу через 360 минут (6 часов)
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python -u bot.py
         timeout-minutes: 350
