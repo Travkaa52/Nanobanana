@@ -26,6 +26,7 @@ jobs:
       - name: Run Telegram Bot
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         # Используем unbuffered вывод, чтобы логи в GitHub Actions обновлялись в реальном времени
         run: python -u bot.py 
