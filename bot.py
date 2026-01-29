@@ -17,7 +17,7 @@ users_db = set()
 # --- Вспомогательные функции ---
 
 async def call_ai(prompt, image_bytes=None, audio_bytes=None):
-    model = "gemini-2.0-flash-exp"
+    model = "gemini-2.0-flash"
     contents = [prompt] if prompt else ["Опиши это"]
     
     if image_bytes:
