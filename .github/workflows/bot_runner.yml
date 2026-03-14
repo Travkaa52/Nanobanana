@@ -3,7 +3,7 @@ name: Telegram Nano Banana Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *' # Запуск каждые 6 часов
 
 jobs:
   run-bot:
@@ -20,8 +20,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Нам нужны: aiogram (для ТГ), google-genai (для картинок), openai (для DeepSeek)
-          pip install aiogram google-genai openai
+          # Устанавливаем именно те библиотеки, которые вы импортируете в коде
+          pip install python-telegram-bot pytz python-dotenv google-genai openai
 
       - name: Run Telegram Bot
         env:
@@ -29,4 +29,5 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python -u bot.py
+        # Внимание: GitHub может принудительно остановить процесс, если он висит слишком долго
         timeout-minutes: 350
