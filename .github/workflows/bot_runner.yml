@@ -1,34 +1,106 @@
-name: Telegram Nano Banana Bot
+name: Telegram FunsDiia Bot
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Ручний запуск
   schedule:
-    - cron: '0 */6 * * *' # Запуск каждые 6 часов
+    - cron: '*/30 * * * *' # Запуск кожні 30 хвилин для підтримки активності
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Отримання коду
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Встановлення Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+          cache: 'pip' # Кешування залежностей для швидшого запуску
 
-      - name: Install dependencies
+      - name: 📦 Встановлення залежностей
         run: |
           python -m pip install --upgrade pip
-          # Устанавливаем именно те библиотеки, которые вы импортируете в коде
-          pip install python-telegram-bot pytz python-dotenv google-genai openai
+          pip install python-telegram-bot==20.7
+          pip install python-dotenv==1.0.0
+          pip install pytz==2023.3
+          pip install requests==2.31.0
+          # Створюємо файл requirements.txt для зручності
+          echo "python-telegram-bot==20.7" > requirements.txt
+          echo "python-dotenv==1.0.0" >> requirements.txt
+          echo "pytz==2023.3" >> requirements.txt
+          echo "requests==2.31.0" >> requirements.txt
 
-      - name: Run Telegram Bot
+      - name: 🔧 Налаштування Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: 📂 Створення необхідних директорій
+        run: |
+          mkdir -p data
+          mkdir -p logs
+          touch data/users_data.json
+          touch data/orders_data.json
+          touch data/feedback_data.json
+          touch data/tariffs_data.json
+          echo '{}' > data/users_data.json
+          echo '{}' > data/orders_data.json
+          echo '{}' > data/feedback_data.json
+
+      - name: 🚀 Запуск Telegram бота
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
-        run: python -u bot.py
-        # Внимание: GitHub может принудительно остановить процесс, если он висит слишком долго
-        timeout-minutes: 350
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          GITHUB_ACTIONS: true
+        run: |
+          echo "🌸 Запуск бота FunsDiia..."
+          echo "⚙️ Версія Python: $(python --version)"
+          echo "📦 Встановлені пакети:"
+          pip list
+          echo "⏰ Час запуску: $(date)"
+          echo "-------------------"
+          python bot.py
+        timeout-minutes: 350  # Максимальний час роботи (майже 6 годин)
+
+      - name: 💾 Збереження даних (якщо бот зупинився)
+        if: always()
+        run: |
+          echo "📊 Стан файлів даних:"
+          ls -la data/
+          echo "📝 Останні логи:"
+          if [ -f bot.log ]; then
+            tail -50 bot.log
+          fi
+
+      - name: 📤 Завантаження даних назад у репозиторій
+        if: always()
+        run: |
+          # Копіюємо файли даних у корінь для збереження
+          if [ -f data/users_data.json ]; then
+            cp data/users_data.json users_data.json
+          fi
+          if [ -f data/orders_data.json ]; then
+            cp data/orders_data.json orders_data.json
+          fi
+          if [ -f data/feedback_data.json ]; then
+            cp data/feedback_data.json feedback_data.json
+          fi
+          if [ -f data/tariffs_data.json ]; then
+            cp data/tariffs_data.json tariffs_data.json
+          fi
+          
+          # Додаємо файли до коміту
+          git add *.json 2>/dev/null || true
+          
+          # Якщо є зміни, комітимо
+          if ! git diff --cached --quiet; then
+            git commit -m "🤖 Автоматичне оновлення даних бота [$(date +'%Y-%m-%d %H:%M')]"
+            git push
+            echo "✅ Дані збережено в репозиторій"
+          else
+            echo "ℹ️ Немає змін для збереження"
+          fi
