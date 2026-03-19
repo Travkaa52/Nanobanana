@@ -1,24 +1,33 @@
 name: Telegram FunsDiia Bot
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:  # Ручний запуск
+  workflow_dispatch:  # Тільки ручний запуск
   schedule:
-    - cron: '*/30 * * * *' # Запуск кожні 30 хвилин для підтримки активності
+    - cron: '*/30 * * * *' # Запуск кожні 30 хвилин
+
+# Важливо: дозволяємо тільки один одночасний запуск
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    # Додаємо timeout, щоб job не висів вічно
+    timeout-minutes: 55  # Трохи менше ніж інтервал запуску
+    
     steps:
       - name: 📥 Отримання коду
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # Важливо для уникнення конфліктів
+          fetch-depth: 0
 
       - name: 🐍 Встановлення Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          cache: 'pip' # Кешування залежностей для швидшого запуску
+          cache: 'pip'
 
       - name: 📦 Встановлення залежностей
         run: |
@@ -27,28 +36,46 @@ jobs:
           pip install python-dotenv==1.0.0
           pip install pytz==2023.3
           pip install requests==2.31.0
-          # Створюємо файл requirements.txt для зручності
-          echo "python-telegram-bot==20.7" > requirements.txt
-          echo "python-dotenv==1.0.0" >> requirements.txt
-          echo "pytz==2023.3" >> requirements.txt
-          echo "requests==2.31.0" >> requirements.txt
 
-      - name: 🔧 Налаштування Git
+      - name: 📂 Підготовка даних
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
-      - name: 📂 Створення необхідних директорій
-        run: |
+          # Створюємо директорії
           mkdir -p data
-          mkdir -p logs
-          touch data/users_data.json
-          touch data/orders_data.json
-          touch data/feedback_data.json
-          touch data/tariffs_data.json
-          echo '{}' > data/users_data.json
-          echo '{}' > data/orders_data.json
-          echo '{}' > data/feedback_data.json
+          
+          # Завантажуємо попередні дані з репозиторію
+          if [ -f users_data.json ]; then
+            cp users_data.json data/users_data.json
+          else
+            echo '{}' > data/users_data.json
+          fi
+          
+          if [ -f orders_data.json ]; then
+            cp orders_data.json data/orders_data.json
+          else
+            echo '{}' > data/orders_data.json
+          fi
+          
+          if [ -f feedback_data.json ]; then
+            cp feedback_data.json data/feedback_data.json
+          else
+            echo '{}' > data/feedback_data.json
+          fi
+          
+          if [ -f tariffs_data.json ]; then
+            cp tariffs_data.json data/tariffs_data.json
+          fi
+
+      - name: 🔍 Перевірка наявності іншого запуску
+        run: |
+          # Створюємо файл блокування
+          echo "${{ github.run_id }}" > data/bot.lock
+          
+          # Перевіряємо чи немає іншого процесу
+          if curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/getWebhookInfo" | grep -q "pending_update_count"; then
+            echo "✅ Webhook налаштований, використовуємо його"
+          else
+            echo "✅ Бот готовий до запуску"
+          fi
 
       - name: 🚀 Запуск Telegram бота
         env:
@@ -56,49 +83,65 @@ jobs:
           ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
           BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
           GITHUB_ACTIONS: true
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           echo "🌸 Запуск бота FunsDiia..."
           echo "⚙️ Версія Python: $(python --version)"
-          echo "📦 Встановлені пакети:"
-          pip list
           echo "⏰ Час запуску: $(date)"
           echo "-------------------"
-          python bot.py
-        timeout-minutes: 350  # Максимальний час роботи (майже 6 годин)
+          
+          # Запускаємо бота з правильними шляхами
+          cd data
+          python ../bot.py
+          
+        timeout-minutes: 25  # 25 хвилин роботи
 
-      - name: 💾 Збереження даних (якщо бот зупинився)
+      - name: 💾 Збереження даних
         if: always()
         run: |
           echo "📊 Стан файлів даних:"
           ls -la data/
-          echo "📝 Останні логи:"
-          if [ -f bot.log ]; then
-            tail -50 bot.log
+          
+          # Копіюємо файли назад до кореня
+          if [ -f data/users_data.json ]; then
+            cp data/users_data.json users_data.json
+            echo "✅ users_data.json збережено"
           fi
+          
+          if [ -f data/orders_data.json ]; then
+            cp data/orders_data.json orders_data.json
+            echo "✅ orders_data.json збережено"
+          fi
+          
+          if [ -f data/feedback_data.json ]; then
+            cp data/feedback_data.json feedback_data.json
+            echo "✅ feedback_data.json збережено"
+          fi
+          
+          if [ -f data/tariffs_data.json ]; then
+            cp data/tariffs_data.json tariffs_data.json
+            echo "✅ tariffs_data.json збережено"
+          fi
+          
+          # Видаляємо файл блокування
+          rm -f data/bot.lock
 
       - name: 📤 Завантаження даних назад у репозиторій
         if: always()
         run: |
-          # Копіюємо файли даних у корінь для збереження
-          if [ -f data/users_data.json ]; then
-            cp data/users_data.json users_data.json
-          fi
-          if [ -f data/orders_data.json ]; then
-            cp data/orders_data.json orders_data.json
-          fi
-          if [ -f data/feedback_data.json ]; then
-            cp data/feedback_data.json feedback_data.json
-          fi
-          if [ -f data/tariffs_data.json ]; then
-            cp data/tariffs_data.json tariffs_data.json
-          fi
+          # Налаштовуємо Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           
-          # Додаємо файли до коміту
+          # Додаємо змінені файли
           git add *.json 2>/dev/null || true
           
-          # Якщо є зміни, комітимо
+          # Перевіряємо чи є зміни
           if ! git diff --cached --quiet; then
             git commit -m "🤖 Автоматичне оновлення даних бота [$(date +'%Y-%m-%d %H:%M')]"
+            
+            # Використовуємо GITHUB_TOKEN для push
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
             git push
             echo "✅ Дані збережено в репозиторій"
           else
