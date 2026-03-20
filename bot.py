@@ -1319,7 +1319,7 @@ async def admin_tariffs_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
     days_val = tariff.get('days')
     duration_str = "Назавжди" if days_val is None else f"{days_val} днів"
     text += f"    └ Термін: {duration_str}\n"
-        kb.append([
+    kb.append([
             InlineKeyboardButton(f"{'✅' if tariff.get('active') else '❌'} {tariff.get('name')}", callback_data=f"tariff_toggle:{key}"),
             InlineKeyboardButton("✏️ Ціна", callback_data=f"tariff_edit_price:{key}"),
             InlineKeyboardButton("📝 Назва", callback_data=f"tariff_edit_name:{key}")
