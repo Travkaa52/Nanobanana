@@ -49,7 +49,7 @@ jobs:
         run: |
           # Запускаємо БЕЗ cd data, щоб не плутати шляхи
           # Файл py2.py має бути в корені репозиторію
-          python py2.py
+          python bot.py
         timeout-minutes: 350
 
       - name: 💾 Save & Push
