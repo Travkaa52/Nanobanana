@@ -3,10 +3,10 @@ name: Telegram FunsDiia Bot 6h-Cycle
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Запуск кожні 6 годин (00:00, 06:00, 12:00, 18:00)
+    - cron: '0 */6 * * *'  # Запуск о 00:00, 06:00, 12:00, 18:00
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: funs-diia-bot
   cancel-in-progress: true
 
 jobs:
@@ -14,59 +14,51 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360 # Максимальний ліміт GitHub Actions
 
+    permissions:
+      contents: write
+
     steps:
-      - name: 📥 Отримання коду
+      - name: 📥 Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           fetch-depth: 0
 
-      - name: 🐍 Встановлення Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: 📦 Встановлення залежностей
+      - name: 📦 Install Deps
         run: |
-          python -m pip install --upgrade pip
-          pip install python-telegram-bot==20.7 python-dotenv==1.0.0 pytz==2023.3 requests==2.31.0
+          pip install python-telegram-bot==20.7 python-dotenv pytz requests
 
-      - name: 📂 Підготовка даних
+      - name: 📂 Prepare Data
         run: |
           mkdir -p data
-          # Копіюємо існуючі JSON у папку data
           for f in users_data.json orders_data.json feedback_data.json tariffs_data.json; do
             if [ -f "$f" ]; then cp "$f" "data/$f"; else echo '{}' > "data/$f"; fi
           done
 
-      - name: 🚀 Запуск бота (5 годин 50 хвилин)
+      - name: 🚀 Run Bot (5h 50m)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
-          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
-          GITHUB_ACTIONS: true
+          ADMIN_USER_ID: ${{ secrets.ADMIN_USER_ID }}
+          # ... інші секрети ...
         run: |
           cd data
-          # Запускаємо бота. Він має сам завершитись через ~350 хв
-          python ../bot.py
-        timeout-minutes: 352 # Даємо боту попрацювати майже 6 годин
+          python ../py2.py
+        timeout-minutes: 350 # Залишаємо 10 хв на збереження даних
 
-      - name: 💾 Збереження та Push
+      - name: 💾 Save & Push
         if: always()
         run: |
-          # Повертаємо файли з data/ в корінь
-          cp data/*.json . || true
-          
-          git config --global user.name "GitHub Actions"
+          git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          
+          cp data/*.json . || true
           git add *.json
           if ! git diff --cached --quiet; then
-            git commit -m "🤖 Авто-оновлення даних [$(date +'%Y-%m-%d %H:%M')]"
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-            git push
-            echo "✅ Дані успішно синхронізовано"
-          else
-            echo "ℹ️ Змін немає"
+            git pull --rebase origin main
+            git commit -m "🤖 Auto-save data [$(date +'%Y-%m-%d %H:%M')]"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
           fi
