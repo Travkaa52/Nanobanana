@@ -32,8 +32,13 @@ jobs:
 
       - name: 📦 Install Deps
         run: |
-          pip install -r requirements.txt || pip install python-telegram-bot==20.7 python-dotenv pytz requests
-
+          python -m pip install --upgrade pip
+          # Встановлюємо всі бібліотеки, які ти імпортуєш у коді
+          pip install python-telegram-bot==20.7 \
+                      python-dotenv==1.0.0 \
+                      pytz==2023.3 \
+                      requests==2.31.0
+                      
       - name: 🚀 Run Bot (5h 50m)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
