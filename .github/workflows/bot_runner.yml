@@ -12,7 +12,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 365
 
     permissions:
       contents: write
@@ -32,49 +32,44 @@ jobs:
 
       - name: 📦 Install Deps
         run: |
-          pip install python-telegram-bot==20.7 python-dotenv pytz requests
-
-      - name: 📂 Prepare Data
-        run: |
-          # Створюємо папку, якщо її немає, і копіюємо файли
-          mkdir -p data
-          for f in users_data.json orders_data.json feedback_data.json tariffs_data.json; do
-            if [ -f "$f" ]; then cp "$f" "data/$f"; else echo '{}' > "data/$f"; fi
-          done
+          pip install -r requirements.txt || pip install python-telegram-bot==20.7 python-dotenv pytz requests
 
       - name: 🚀 Run Bot (5h 50m)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ADMIN_USER_ID: ${{ secrets.ADMIN_USER_ID }}
+          NOTIFICATION_CHAT_ID: ${{ secrets.NOTIFICATION_CHAT_ID }}
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
         run: |
-          # Запускаємо БЕЗ cd data, щоб не плутати шляхи
-          # Файл py2.py має бути в корені репозиторію
+          # Запускаємо бота з кореня. 
+          # ВАЖЛИВО: переконайся, що в bot.py шляхи вказані як 'data/users_data.json'
           python bot.py
         timeout-minutes: 350
 
-      - name: 💾 Save & Push
+      - name: 💾 Save & Push Data
         if: always()
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
+
+          # 1. Створюємо тимчасову копію нових даних
+          mkdir -p temp_data
+          cp data/*.json temp_data/ 2>/dev/null || true
+
+          # 2. Очищуємо Git від конфліктів та затягуємо свіжі зміни
+          git reset --hard HEAD
+          git pull --rebase origin main
+
+          # 3. Повертаємо оновлені файли в папку data/
+          mkdir -p data
+          cp temp_data/*.json data/ 2>/dev/null || true
           
-          # Копіюємо оновлені дані з папки data назад у корінь
-          cp data/*.json . || true
-          
-          # Додаємо файли в індекс
-          git add *.json
-          
-          # Перевіряємо наявність змін
+          # 4. Комітимо саме папку data
+          git add data/*.json
           if ! git diff --cached --quiet; then
-            # Спочатку комітимо локальні зміни
-            git commit -m "🤖 Auto-save data [$(date +'%Y-%m-%d %H:%M')]"
-            
-            # Тільки потім робимо pull з ребейзом, щоб злити зміни з сервера
-            git pull --rebase origin main
-            
-            # Тепер пушимо
+            git commit -m "🤖 Auto-save [$(date +'%Y-%m-%d %H:%M')]"
             git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
-            echo "✅ Дані збережено успішно"
+            echo "✅ Дані успішно синхронізовано"
           else
-            echo "ℹ️ Змін у JSON файлах не виявлено"
+            echo "ℹ️ Змін не виявлено"
           fi
