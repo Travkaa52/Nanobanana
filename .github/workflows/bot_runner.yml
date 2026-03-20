@@ -3,7 +3,7 @@ name: Telegram FunsDiia Bot 6h-Cycle
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'  # Запуск о 00:00, 06:00, 12:00, 18:00
+    - cron: '0 */6 * * *'
 
 concurrency:
   group: funs-diia-bot
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 360 # Максимальний ліміт GitHub Actions
+    timeout-minutes: 360
 
     permissions:
       contents: write
@@ -22,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v4
@@ -35,6 +36,7 @@ jobs:
 
       - name: 📂 Prepare Data
         run: |
+          # Створюємо папку, якщо її немає, і копіюємо файли
           mkdir -p data
           for f in users_data.json orders_data.json feedback_data.json tariffs_data.json; do
             if [ -f "$f" ]; then cp "$f" "data/$f"; else echo '{}' > "data/$f"; fi
@@ -44,21 +46,35 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ADMIN_USER_ID: ${{ secrets.ADMIN_USER_ID }}
-          # ... інші секрети ...
         run: |
-          cd data
-          python ../py2.py
-        timeout-minutes: 350 # Залишаємо 10 хв на збереження даних
+          # Запускаємо БЕЗ cd data, щоб не плутати шляхи
+          # Файл py2.py має бути в корені репозиторію
+          python py2.py
+        timeout-minutes: 350
 
       - name: 💾 Save & Push
         if: always()
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
+          
+          # Копіюємо оновлені дані з папки data назад у корінь
           cp data/*.json . || true
+          
+          # Додаємо файли в індекс
           git add *.json
+          
+          # Перевіряємо наявність змін
           if ! git diff --cached --quiet; then
-            git pull --rebase origin main
+            # Спочатку комітимо локальні зміни
             git commit -m "🤖 Auto-save data [$(date +'%Y-%m-%d %H:%M')]"
+            
+            # Тільки потім робимо pull з ребейзом, щоб злити зміни з сервера
+            git pull --rebase origin main
+            
+            # Тепер пушимо
             git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+            echo "✅ Дані збережено успішно"
+          else
+            echo "ℹ️ Змін у JSON файлах не виявлено"
           fi
