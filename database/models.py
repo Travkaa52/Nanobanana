@@ -13,11 +13,11 @@ SCHEMAS = {
             bought BOOL DEFAULT FALSE,
             joined TIMESTAMP,
             spent INT DEFAULT 0,
-            lang TEXT DEFAULT 'uk',
+            language TEXT DEFAULT 'uk',
             blocked BOOL DEFAULT FALSE,
             tariff TEXT DEFAULT 'free',
-            tariff_start TIMESTAMP,
-            tariff_end TIMESTAMP,
+            tariff_purchase_date TIMESTAMP,
+            tariff_expires_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT NOW()
         )
     """,
@@ -93,11 +93,10 @@ SCHEMAS = {
 
 INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_users_tariff ON users(tariff)",
-    "CREATE INDEX IF NOT EXISTS idx_users_tariff_end ON users(tariff_end)",
+    "CREATE INDEX IF NOT EXISTS idx_users_tariff_expires ON users(tariff_expires_at)",
     "CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)",
-    "CREATE INDEX IF NOT EXISTS idx_promocodes_code ON promocodes(code)",
-    "CREATE INDEX IF NOT EXISTS idx_promocodes_active ON promocodes(is_active)"
+    "CREATE INDEX IF NOT EXISTS idx_promocodes_code ON promocodes(code)"
 ]
 
 DEFAULT_TARIFFS = """
