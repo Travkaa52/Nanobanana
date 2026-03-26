@@ -1,0 +1,124 @@
+{
+  "users": [
+    {
+      "user_id": 5423792783,
+      "username": "travka_1044",
+      "first_name": "ꏢ𝖙𝖗𝖆𝖛𝖐𝖆ꑭ•ᛉ",
+      "balance": 0,
+      "referred_by": null,
+      "ref_count": 0,
+      "has_bought": true,
+      "joined_date": "2026-03-26 09:30:00.988938",
+      "total_spent": 250,
+      "language": "uk",
+      "blocked": false,
+      "tariff": "forever",
+      "tariff_purchase_date": "2026-03-26 07:48:50.065296",
+      "tariff_expires_at": null,
+      "created_at": "2026-03-26 07:30:03.691220",
+      "updated_at": "2026-03-26 07:48:50.090837"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "c13d1cb5",
+      "user_id": 5423792783,
+      "tariff": "forever",
+      "fio": "Аоаиаоаоа алаала аталао",
+      "dob": "11.11.2000",
+      "sex": "M",
+      "price": 250,
+      "promo_code": null,
+      "discount_amount": 0,
+      "final_price": 250,
+      "created_at": "2026-03-26 09:30:28.902454",
+      "status": "approved",
+      "approved_at": "2026-03-26 09:30:36.865690"
+    },
+    {
+      "order_id": "82fae62e",
+      "user_id": 5423792783,
+      "tariff": "forever",
+      "fio": "Катао ааоатаоа аоаоа",
+      "dob": "11.11.2000",
+      "sex": "M",
+      "price": 250,
+      "promo_code": "SUMMER2024",
+      "discount_amount": 250,
+      "final_price": -375,
+      "created_at": "2026-03-26 07:48:36.926156",
+      "status": "approved",
+      "approved_at": "2026-03-26 07:48:50.223055"
+    }
+  ],
+  "feedback": [],
+  "tariffs": [
+    {
+      "tariff_key": "1_day",
+      "name": "🌙 1 день",
+      "price": 20,
+      "days": 1,
+      "emoji": "🌙",
+      "active": true,
+      "created_at": "2026-03-26 07:29:43.605528"
+    },
+    {
+      "tariff_key": "30_days",
+      "name": "📅 30 днів",
+      "price": 70,
+      "days": 30,
+      "emoji": "📅",
+      "active": true,
+      "created_at": "2026-03-26 07:29:43.605528"
+    },
+    {
+      "tariff_key": "90_days",
+      "name": "🌿 90 днів",
+      "price": 150,
+      "days": 90,
+      "emoji": "🌿",
+      "active": true,
+      "created_at": "2026-03-26 07:29:43.605528"
+    },
+    {
+      "tariff_key": "180_days",
+      "name": "🌟 180 днів",
+      "price": 190,
+      "days": 180,
+      "emoji": "🌟",
+      "active": true,
+      "created_at": "2026-03-26 07:29:43.605528"
+    },
+    {
+      "tariff_key": "forever",
+      "name": "💎 Назавжди",
+      "price": 250,
+      "days": null,
+      "emoji": "💎",
+      "active": true,
+      "created_at": "2026-03-26 07:29:43.605528"
+    }
+  ],
+  "promocodes": [
+    {
+      "id": 1,
+      "code": "SUMMER2024",
+      "discount_type": "free",
+      "discount_value": 250,
+      "max_activations": 1,
+      "used_count": 1,
+      "is_active": true,
+      "expires_at": null,
+      "tariff_name": null,
+      "created_at": "2026-03-26 07:36:11.999252"
+    }
+  ],
+  "user_promocodes": [
+    {
+      "id": 1,
+      "user_id": 5423792783,
+      "promo_code": "SUMMER2024",
+      "used_at": "2026-03-26 07:48:27.459648"
+    }
+  ]
+}
