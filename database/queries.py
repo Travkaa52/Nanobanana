@@ -25,7 +25,7 @@ async def buy_tariff(uid: int, tariff: str, days: int = None):
     end = start + timedelta(days=days) if days else None
     await execute("""
         UPDATE users 
-        SET tariff = $1, tariff_start = $2, tariff_end = $3, bought = TRUE
+        SET tariff = $1, tariff_purchase_date = $2, tariff_expires_at = $3, bought = TRUE
         WHERE user_id = $4
     """, tariff, start, end, uid)
 
@@ -33,9 +33,9 @@ async def is_tariff_active(uid: int) -> bool:
     user = await get_user(uid)
     if not user or user['tariff'] == 'free':
         return False
-    if user['tariff_end'] is None:
+    if user['tariff_expires_at'] is None:
         return True
-    return user['tariff_end'] > datetime.now()
+    return user['tariff_expires_at'] > datetime.now()
 
 # ========== ORDERS ==========
 async def create_order(oid: str, uid: int, tariff: str, fio: str, dob: str, sex: str, 
