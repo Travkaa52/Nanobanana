@@ -28,9 +28,11 @@ async def setup_database():
                 bought BOOL DEFAULT FALSE,
                 joined TIMESTAMP,
                 spent INT DEFAULT 0,
+                language TEXT DEFAULT 'uk',
+                blocked BOOL DEFAULT FALSE,
                 tariff TEXT DEFAULT 'free',
-                tariff_start TIMESTAMP,
-                tariff_end TIMESTAMP,
+                tariff_purchase_date TIMESTAMP,
+                tariff_expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
@@ -114,9 +116,9 @@ async def setup_database():
         ''')
         print("✅ Таблица user_promocodes создана")
         
-        # Создаем индексы
+        # Создаем индексы (только для существующих колонок)
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_tariff ON users(tariff)')
-        await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_tariff_end ON users(tariff_end)')
+        await conn.execute('CREATE INDEX IF NOT EXISTS idx_users_tariff_expires ON users(tariff_expires_at)')
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)')
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
         await conn.execute('CREATE INDEX IF NOT EXISTS idx_promocodes_code ON promocodes(code)')
